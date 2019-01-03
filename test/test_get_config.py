@@ -7,13 +7,12 @@ def test_get_config():
     test class Config in Util/Config
     :return:
     """
-    gg = Config()
-    print(gg.db_type)
-    print(gg.db_name)
-    print(gg.db_host)
-    print(gg.db_port)
-    assert isinstance(gg.proxy_getter_functions, list)
-    print(gg.proxy_getter_functions)
+    print(Config.db_type)
+    print(Config.db_name)
+    print(Config.db_host)
+    print(Config.db_port)
+    assert isinstance(Config.proxy_getter_functions, list)
+    print(Config.proxy_getter_functions)
 
 
 if __name__ == '__main__':

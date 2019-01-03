@@ -1,16 +1,7 @@
 # -*- coding: utf-8 -*-
 import re
-import sys
 
 import requests
-
-try:
-    from importlib import reload  # py3 实际不会实用，只是为了不显示语法错误
-except:
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
-
-sys.path.append('..')
 
 from utils import WebRequest
 from utils import get_html_tree
@@ -27,7 +18,6 @@ requests.packages.urllib3.disable_warnings()
     kuaidaili.com
     cn-proxy.com
     proxy-list.org
-    www.mimiip.com to do
 """
 
 
@@ -35,9 +25,6 @@ class ProxyFetcher(object):
     """
     proxy getter
     """
-
-    def __init__(self):
-        pass
 
     @staticmethod
     def freeProxyFirst(page=10):
@@ -298,9 +285,6 @@ class ProxyFetcher(object):
 
 
 if __name__ == '__main__':
-    from CheckProxy import CheckProxy
-
-    CheckProxy.checkGetProxyFunc(ProxyFetcher.freeProxyFifth)
-    CheckProxy.checkGetProxyFunc(ProxyFetcher.freeProxySecond)
+    from fetcher.CheckProxy import CheckProxy
 
     CheckProxy.checkAllGetProxyFunc()

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
-import sys
 import time
 from threading import Thread
 
 from six.moves import queue
 
-sys.path.append('../')
-
-from scheduler.ProxyCheck import ProxyCheck
 from manager.ProxyManager import ProxyManager
+from scheduler.ProxyCheck import ProxyCheck
 
 
 class ProxyCheckScheduler(ProxyManager, Thread):
@@ -21,7 +18,7 @@ class ProxyCheckScheduler(ProxyManager, Thread):
 
     def __valid_proxy(self, threads=10):
         """
-        验证useful_proxy代理
+        验证usable_proxy代理
         :param threads: 线程数
         :return:
         """
@@ -48,7 +45,7 @@ class ProxyCheckScheduler(ProxyManager, Thread):
                 self.putQueue()
 
     def putQueue(self):
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         self.proxy_item = self.db.get_all()
         for item in self.proxy_item:
             self.queue.put(item)

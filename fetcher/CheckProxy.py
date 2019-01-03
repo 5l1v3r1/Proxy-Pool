@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from ProxyFetcher import GetFreeProxy
-
+from fetcher.ProxyFetcher import ProxyFetcher
 from utils import verify_proxy_format
 
 sys.path.append('../')
@@ -22,7 +21,7 @@ class CheckProxy(object):
             None
         """
         import inspect
-        member_list = inspect.getmembers(GetFreeProxy, predicate=inspect.isfunction)
+        member_list = inspect.getmembers(ProxyFetcher, predicate=inspect.isfunction)
         proxy_count_dict = dict()
         for func_name, func in member_list:
             log.info(u"开始运行 {}".format(func_name))
@@ -58,4 +57,4 @@ class CheckProxy(object):
 
 if __name__ == '__main__':
     CheckProxy.checkAllGetProxyFunc()
-    CheckProxy.checkGetProxyFunc(GetFreeProxy.freeProxyFirst)
+    CheckProxy.checkGetProxyFunc(ProxyFetcher.freeProxyFirst)

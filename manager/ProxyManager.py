@@ -2,6 +2,7 @@
 import random
 
 import six
+from six import add_metaclass
 
 from db.DBClient import DBClient
 from fetcher.ProxyFetcher import ProxyFetcher
@@ -9,28 +10,23 @@ from utils import Config, Singleton
 from utils import LogHandler
 from utils import verify_proxy_format
 
-RAW_PROXY = 'raw_proxy'
-USABLE_PROXY = 'usable_proxy'
 
-
-@six.add_metaclass(Singleton)
+@add_metaclass(Singleton)
 class ProxyManager(object):
     """
     ProxyManager
     """
+    RAW_PROXY = 'raw_proxy'
+    USABLE_PROXY = 'usable_proxy'
     log = LogHandler('proxy_manager')
     db = DBClient()
-    config = Config()
-
-    def __init__(self):
-        super(ProxyManager, self).__init__()
 
     def refresh(self):
         """
         fetch proxy into Db by ProxyGetter
         :return:
         """
-        for proxyGetter in self.config.proxy_getter_functions:
+        for proxyGetter in Config.proxy_getter_functions:
             # fetch
             proxy_set = set()
             try:
@@ -49,10 +45,10 @@ class ProxyManager(object):
 
             # store
             for proxy in proxy_set:
-                self.db.change_table(self.useful_proxy_queue)
+                self.db.change_table(self.USABLE_PROXY)
                 if self.db.exists(proxy):
                     continue
-                self.db.change_table(self.raw_proxy_queue)
+                self.db.change_table(self.RAW_PROXY)
                 self.db.put(proxy)
 
     def get(self):
@@ -60,7 +56,7 @@ class ProxyManager(object):
         return a useful proxy
         :return:
         """
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         item_dict = self.db.get_all()
         if item_dict:
             if six.PY3:
@@ -76,7 +72,7 @@ class ProxyManager(object):
         :param proxy:
         :return:
         """
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         self.db.delete(proxy)
 
     def get_all(self):
@@ -84,18 +80,18 @@ class ProxyManager(object):
         get all proxy from pool as list
         :return:
         """
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         item_dict = self.db.get_all()
         if six.PY3:
             return list(item_dict.keys()) if item_dict else list()
         return item_dict.keys() if item_dict else list()
 
     def get_size(self):
-        self.db.change_table(self.raw_proxy_queue)
+        self.db.change_table(self.RAW_PROXY)
         total_raw_proxy = self.db.get_size()
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         total_useful_queue = self.db.get_size()
-        return {RAW_PROXY: total_raw_proxy, USABLE_PROXY: total_useful_queue}
+        return {self.RAW_PROXY: total_raw_proxy, self.USABLE_PROXY: total_useful_queue}
 
 
 if __name__ == '__main__':

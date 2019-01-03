@@ -20,7 +20,7 @@ class ProxyCheck(ProxyManager, Thread):
         self.item_dict = item_dict
 
     def run(self):
-        self.db.change_table(self.useful_proxy_queue)
+        self.db.change_table(self.USABLE_PROXY)
         while self.queue.qsize():
             proxy = self.queue.get()
             count = self.item_dict[proxy]

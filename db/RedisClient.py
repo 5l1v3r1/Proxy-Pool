@@ -1,13 +1,4 @@
 # -*- coding: utf-8 -*-
-'''
-self.name为Redis中的一个key
-2017/4/17 修改pop
-'''
-
-# ############################
-# 已弃用，
-# SsdbClient.py 支持redis
-##############################
 
 import json
 import random
@@ -15,7 +6,6 @@ import sys
 
 import redis
 
-from db.DBClient import DBClient
 from db.IDBClient import IDBClient
 
 

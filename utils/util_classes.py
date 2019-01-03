@@ -1,6 +1,20 @@
 # -*- coding: utf-8 -*-
 from abc import ABCMeta
 
+from six.moves import configparser
+
+
+class ConfigParse(configparser.ConfigParser):
+    """
+    rewrite ConfigParser, for support upper option
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ConfigParse, self).__init__(*args, **kwargs)
+
+    def optionxform(self, optionstr):
+        return optionstr
+
 
 class Singleton(ABCMeta):
     """

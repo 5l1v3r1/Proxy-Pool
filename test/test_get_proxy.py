@@ -11,8 +11,7 @@ def test_get_proxy():
     test class GetFreeProxy in fetcher.GetFreeProxy
     :return:
     """
-    gc = Config()
-    proxy_getter_functions = gc.proxy_getter_functions
+    proxy_getter_functions = Config.proxy_getter_functions
     for proxyGetter in proxy_getter_functions:
         proxy_count = 0
         for proxy in getattr(ProxyFetcher, proxyGetter.strip())():

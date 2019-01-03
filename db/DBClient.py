@@ -4,18 +4,17 @@ import sys
 
 from db.IDBClient import IDBClient
 from utils import Config
-from utils import Singleton
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 
 class DBClient(IDBClient):
     """
-    DbClient DB工厂类 提供get/put/pop/delete/getAll/changeTable方法
+    DBClient DB工厂类 提供get/put/pop/delete/get_all/change_table/get_size方法
 
     目前存放代理的table/collection/hash有两种：
-        raw_proxy： 存放原始的代理；
-        useful_proxy_queue： 存放检验后的代理；
+        RAW_PROXY： 存放原始的代理；
+        USABLE_PROXY： 存放检验后的代理；
 
     抽象方法定义：
         get(proxy): 返回proxy的信息；
@@ -30,7 +29,7 @@ class DBClient(IDBClient):
 
 
         所有方法需要相应类去具体实现：
-            SSDB：SsdbClient.py
+            SSDB：SSDBClient.py
             REDIS:RedisClient.py
 
     """
@@ -40,7 +39,6 @@ class DBClient(IDBClient):
         init
         :return:
         """
-        self.config = Config()
         self.__init_db()
 
     def __init_db(self):
@@ -49,16 +47,16 @@ class DBClient(IDBClient):
         :return:
         """
         __type = None
-        if "SSDB" == self.config.db_type:
+        if "SSDB" == Config.db_type:
             __type = "SSDBClient"
-        elif "REDIS" == self.config.db_type:
+        elif "REDIS" == Config.db_type:
             __type = "RedisClient"
-        elif "MONGODB" == self.config.db_type:
+        elif "MONGODB" == Config.db_type:
             __type = "MongodbClient"
         else:
             pass
-        assert __type, 'type error, Not support DB type: {}'.format(self.config.db_type)
-        self.client = getattr(__import__(__type), __type)(name=self.config.db_name, host=self.config.db_host, port=self.config.db_port)
+        assert __type, 'type error, Not support DB type: {}'.format(Config.db_type)
+        self.client = getattr(__import__(__type), __type)(name=Config.db_name, host=Config.db_host, port=Config.db_port)
 
     def get(self, key, **kwargs):
         return self.client.get(key, **kwargs)

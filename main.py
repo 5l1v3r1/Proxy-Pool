@@ -1,27 +1,24 @@
 # -*- coding: utf-8 -*-
 import sys
-import threading
-from multiprocessing import Process
 
 sys.path.append('../')
 
 from api.ProxyApi import run as ProxyApiRun
-from scheduler.ProxyCheckScheduler import ProxyCheckScheduler
-from scheduler.ProxyRefreshScheduler import ProxyRefreshScheduler
+from scheduler import ProxyCheckScheduler, ProxyRefreshScheduler, ProxyFetcherScheduler
 
 
 def run():
-    p_list = list()
-    p1 = ProxyCheckScheduler()
-    p_list.append(p1)
-    p2 = ProxyRefreshScheduler()
-    p_list.append(p2)
+    ts = [
+        ProxyFetcherScheduler(),
+        ProxyCheckScheduler(),
+        ProxyRefreshScheduler()
+    ]
 
-    for p in p_list:
-        p.daemon = True
+    for p in ts:
+        p.setDaemon(True)
         p.start()
     ProxyApiRun()
-    for p in p_list:
+    for p in ts:
         p.join()
 
 
