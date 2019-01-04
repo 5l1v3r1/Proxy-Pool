@@ -2,7 +2,7 @@
 import sys
 
 sys.path.append('..')
-from fetcher.ProxyFetcher import ProxyFetcher
+from manager.ProxyFetcher import ProxyFetcher
 from utils import Config
 
 

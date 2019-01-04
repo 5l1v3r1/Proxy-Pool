@@ -7,11 +7,9 @@ from requests.models import Response
 
 
 class WebRequest(object):
-    def __init__(self, *args, **kwargs):
-        pass
 
-    @property
-    def user_agent(self):
+    @staticmethod
+    def user_agent():
         """
         return an User-Agent at random
         :return:
@@ -28,21 +26,24 @@ class WebRequest(object):
         ]
         return random.choice(ua_list)
 
-    @property
-    def header(self):
+    @classmethod
+    def header(cls):
         """
         basic header
         :return:
         """
         return {
-            'User-Agent': self.user_agent,
+            'User-Agent': cls.user_agent(),
             'Accept': '*/*',
-            'Connection': 'keep-alive',
-            'Accept-Language': 'zh-CN,zh;q=0.8'
+            'Accept-Encoding': 'gzip, deflate',
+            'Accept-Language': 'zh-CN,zh;q=0.9',
+            'Connection': 'close',
+            'Cache-Control': 'no-cache'
         }
 
-    def get(self, url, header=None, retry_time=5, timeout=30,
-            retry_flag=list(), retry_interval=5, *args, **kwargs):
+    @classmethod
+    def get(cls, url, header=None, retry_time=5, timeout=30,
+            retry_flag=list(), retry_interval=5, **kwargs):
         """
         get method
         :param url: target url
@@ -51,11 +52,10 @@ class WebRequest(object):
         :param timeout: network timeout
         :param retry_flag: if retry_flag in content. do retry
         :param retry_interval: retry interval(second)
-        :param args:
         :param kwargs:
         :return:
         """
-        headers = self.header
+        headers = cls.header()
         if header and isinstance(header, dict):
             headers.update(header)
         while True:
