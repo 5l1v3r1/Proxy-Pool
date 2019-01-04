@@ -6,29 +6,28 @@ from six.moves import queue
 
 from manager.ProxyManager import ProxyManager
 from scheduler.ProxyCheck import ProxyCheck
+from utils import Config
 
 
-class ProxyCheckScheduler(ProxyManager, Thread):
+class ProxyCheckScheduler(Thread, ProxyManager):
     def __init__(self):
-        super(ProxyCheckScheduler, self).__init__()
         Thread.__init__(self)
         self.name = 'ProxyCheckScheduler'
         self.queue = queue.Queue()
         self.proxy_item = dict()
 
-    def __valid_proxy(self, threads=10):
+    def __valid_proxy(self):
         """
         验证usable_proxy代理
         :param threads: 线程数
         :return:
         """
-        thread_list = list()
-        for index in range(threads):
-            thread_list.append(ProxyCheck(self.queue, self.proxy_item))
-
-        for thread in thread_list:
-            thread.daemon = True
+        thread_list = []
+        for index in range(10):
+            thread = ProxyCheck(self.queue, self.proxy_item)
+            thread.setDaemon(True)
             thread.start()
+            thread_list.append(thread)
 
         for thread in thread_list:
             thread.join()
@@ -45,7 +44,7 @@ class ProxyCheckScheduler(ProxyManager, Thread):
                 self.putQueue()
 
     def putQueue(self):
-        self.db.change_table(self.USABLE_PROXY)
+        self.db.change_table(Config.USABLE_PROXY)
         self.proxy_item = self.db.get_all()
         for item in self.proxy_item:
             self.queue.put(item)
@@ -53,4 +52,4 @@ class ProxyCheckScheduler(ProxyManager, Thread):
 
 if __name__ == '__main__':
     p = ProxyCheckScheduler()
-    p.main()
+    p.run()
