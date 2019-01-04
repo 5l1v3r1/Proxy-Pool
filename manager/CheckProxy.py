@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from fetcher.ProxyFetcher import ProxyFetcher
+from manager.ProxyFetcher import ProxyFetcher
 from utils import verify_proxy_format
 
 sys.path.append('../')
