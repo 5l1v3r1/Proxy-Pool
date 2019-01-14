@@ -1,33 +1,43 @@
 # coding:utf-8
-
+import asyncio
 import re
 
 from fetcher import IFetcher
-from utils import WebRequest
+from utils import WebRequest, Config
 
 
 class Fetcher(IFetcher):
     name = 'CN_PROXY'
     source = 'cn-proxy.com'
+    async = True
+
+    async def parse(self, url):
+        loop = asyncio.get_event_loop()
+        req = lambda url: WebRequest.get(url, proxies={'https': 'https://' + Config.proxy})
+        try:
+            r = await loop.run_in_executor(None, req, url)
+        except Exception as e:
+            return []
+        ret = []
+        proxies = re.findall(r'((?:\d{1,3}\.){3}\d{1,3})</td>\s*<td>(\d+)</td>', r.text)
+        for proxy in proxies:
+            ret.append(':'.join(proxy))
+        return ret
 
     def fetch(self):
-        """
-        无忧代理 http://www.data5u.com/
-        几乎没有能用的
-        """
         urls = [
-            'https://cn-proxy.com'
+            'https://cn-proxy.com',
+            'https://cn-proxy.com/archives/218'
         ]
-        ret = []
-        request = WebRequest()
+        tasks = []
         for url in urls:
-            r = WebRequest.get(url, retry_time=1)
-            proxies = re.findall(r'((?:\d{1,3}\.){3}\d{1,3})</td>\s*<td>(\d+)</td>', r.text)
-            for proxy in proxies:
-                ret.append(':'.join(proxy))
-        ret = list(set(ret))
-        return ret
+            tasks.append(asyncio.ensure_future(self.parse(url)))
+        return tasks
 
 
 if __name__ == '__main__':
-    print([_ for _ in Fetcher().fetch()])
+    loop = asyncio.get_event_loop()
+    tasks = Fetcher().fetch()
+    loop.run_until_complete(asyncio.wait(tasks))
+    for i in tasks:
+        print(i.result())

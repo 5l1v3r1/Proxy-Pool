@@ -1,3 +1,2 @@
-from scheduler.ProxyCheckScheduler import ProxyCheckScheduler
-from scheduler.ProxyFetchScheduler import ProxyFetcherScheduler
-from scheduler.ProxyRefreshScheduler import ProxyRefreshScheduler
+from scheduler.fetch_scheduler import ProxyFetcherScheduler
+from scheduler.verify_scheduler import ProxyVerifyScheduler

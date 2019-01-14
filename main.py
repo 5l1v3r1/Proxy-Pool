@@ -1,25 +1,22 @@
-# -*- coding: utf-8 -*-
+# coding:utf-8
 import sys
 
 sys.path.append('../')
 
-from api.ProxyApi import run as ProxyApiRun
-from scheduler import ProxyCheckScheduler, ProxyRefreshScheduler, ProxyFetcherScheduler
+from web.Application import run as WebService
+from scheduler import ProxyFetcherScheduler, ProxyVerifyScheduler
 
 
 def run():
     ts = [
         ProxyFetcherScheduler(),
-        ProxyCheckScheduler(),
-        ProxyRefreshScheduler()
+        ProxyVerifyScheduler()
     ]
 
     for p in ts:
         p.setDaemon(True)
         p.start()
-    ProxyApiRun()
-    for p in ts:
-        p.join()
+    WebService()
 
 
 if __name__ == '__main__':

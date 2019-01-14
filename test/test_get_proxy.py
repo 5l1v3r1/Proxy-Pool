@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+# coding:utf-8
 import sys
 
 sys.path.append('..')
-from manager.ProxyFetcher import ProxyFetcher
+from manager import ProxyFetcherManager
 from utils import Config
 
 
@@ -14,7 +14,7 @@ def test_get_proxy():
     proxy_getter_functions = Config.proxy_getter_functions
     for proxyGetter in proxy_getter_functions:
         proxy_count = 0
-        for proxy in getattr(ProxyFetcher, proxyGetter.strip())():
+        for proxy in getattr(ProxyFetcherManager, proxyGetter.strip())():
             if proxy:
                 print('{func}: fetch proxy {proxy},proxy_count:{proxy_count}'.format(func=proxyGetter, proxy=proxy, proxy_count=proxy_count))
                 proxy_count += 1

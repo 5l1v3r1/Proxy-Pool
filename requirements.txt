@@ -5,5 +5,5 @@ lxml
 six
 pymongo
 redis
-
+kombu
 

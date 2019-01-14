@@ -1,19 +1,19 @@
 # coding:utf-8
-
 import re
 
 import execjs
 from requests import Response
 
 from fetcher import IFetcher
-from utils import WebRequest
+from utils import WebRequest, random_user_agent
 
 
 class Fetcher(IFetcher):
     name = '66ip'
     source = 'www.66ip.cn'
     cookie = None
-    user_agent = WebRequest.user_agent()
+    async = False
+    user_agent = random_user_agent()
 
     def get_cookie(self, req: Response):
         html = req.text
@@ -35,18 +35,17 @@ class Fetcher(IFetcher):
         self.cookie = cookie
 
     def fetch(self):
-        """
-        无忧代理 http://www.data5u.com/
-        几乎没有能用的
-        """
-        url_list = [
+        urls = [
             'http://www.66ip.cn/areaindex_35/1.html'
         ]
         ret = []
 
-        for url in url_list:
-            req = WebRequest.get(url, header={'User-Agent': self.user_agent}, retry_time=1)
-            html = ''
+        for url in urls:
+            if self.cookie:
+                req = WebRequest.get(url, header={'User-Agent': self.user_agent, 'Cookie': self.cookie}, retry_time=1)
+            else:
+                req = WebRequest.get(url, header={'User-Agent': self.user_agent}, retry_time=1)
+            html = req.text
             if req.status_code == 521:
                 self.get_cookie(req)
                 if self.cookie:
@@ -57,9 +56,9 @@ class Fetcher(IFetcher):
             for i in matches:
                 ret.append(':'.join(i))
         ret = list(set(ret))
-        print('fetched %d proxies' % len(ret))
         return ret
 
 
 if __name__ == '__main__':
-    print([_ for _ in Fetcher().fetch()])
+    tasks = Fetcher().fetch()
+    print(tasks)

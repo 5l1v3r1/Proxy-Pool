@@ -15,7 +15,7 @@ def _find_fetcher_class(fetcher):
     raise Exception("Failed to locate Plugin class in " + fetcher)
 
 
-for fetcher_path in glob(os.path.join(Config.project_dir, 'fetcher', 'fetcher_*.py')):
+for fetcher_path in glob(os.path.join(Config.PROJECT_DIR, 'fetcher', 'fetcher_*.py')):
     fetcher_name = os.path.basename(fetcher_path)[:-3]
     fetcher = imp.load_source(fetcher_name, fetcher_path).Fetcher()
     print(fetcher.name)
