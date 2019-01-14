@@ -9,6 +9,7 @@ from utils import WebRequest, Config
 class Fetcher(IFetcher):
     name = 'proxylistplus'
     source = 'list.proxylistplus.com'
+    enabled = False
     async = True
 
     async def parse(self, url):

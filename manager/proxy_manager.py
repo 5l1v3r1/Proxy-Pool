@@ -11,6 +11,7 @@ from utils import Config
 class ProxyManager:
     def __init__(self):
         self.session = Config.Session()
+        self.session.close_all()
 
     def get_proxy(self, proxy: ProxyModel) -> ProxyModel:
         return self.session.query(ProxyModel).get(proxy.unique_id)
@@ -81,3 +82,6 @@ class ProxyManager:
 
     def commit(self):
         self.session.commit()
+
+    def close(self):
+        self.session.close()

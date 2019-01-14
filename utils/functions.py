@@ -1,34 +1,18 @@
 # coding:utf-8
-import os
 import random
+import re
 
-import requests
+IPPattern = re.compile(
+    r'(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)')
 
-from utils import Config, ipdb
+IPPortPatternLine = re.compile(
+    r'^.*?(?P<ip>(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)).*?(?P<port>\d{1,5}).*$',  # noqa
+    flags=re.MULTILINE)
 
-ip_loc = None
-
-
-def verify_proxy_format(proxy: str):
-    """
-    检查代理格式
-    :param proxy:
-    :return:
-    """
-    proxy_split = proxy.split(':')
-    if len(proxy_split) != 2:
-        return False
-    return vaild_ip(proxy_split[0]) and proxy_split[1].isdigit() and 0 < int(proxy_split[1]) < 65536
-
-
-def vaild_ip(ip: str):
-    ip_split = ip.strip().split('.')
-    if len(ip_split) != 4:
-        return False
-    for i in ip_split:
-        if not i.isdigit() or int(i) > 255 or int(i) < 0:
-            return False
-    return True
+IPPortPatternGlobal = re.compile(
+    r'(?P<ip>(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))'  # noqa
+    r'(?=.*?(?:(?:(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?P<port>\d{1,5})))',  # noqa
+    flags=re.DOTALL)
 
 
 def random_user_agent():
@@ -49,22 +33,13 @@ def random_user_agent():
     return random.choice(ua_list)
 
 
-def ip_location(ip):
-    global ip_loc
-    if not vaild_ip(ip):
-        return None
-    ret = requests.get('http://ipapi.ipip.net/find?addr=' + ip, timeout=5, headers={'Token': '800d61aa297ad456f66d0ca43848a7ede99d73fc'}).json()
-    if ret['ret'] != 'ok':
-        if not ip_loc:
-            ip_loc = ipdb.City(os.path.join(Config.PROJECT_DIR, 'utils', 'ipdb', 'mydata4vipday1.ipdb'))
-        city = ip_loc.find_map(ip, 'CN')
-    else:
-        city = dict(zip([
-            'country_name', 'region_name', 'city_name',
-            'owner_domain', 'isp_domain', 'latitude',
-            'longitude', 'timezone', 'utc_offset',
-            'china_admin_code', 'idd_code', 'country_code',
-            'continent_code'
-        ], ret['data']))
-        # city = CityInfo(**city)
-    return city
+def get_headers(rv=False):
+    _rv = str(random.randint(1000, 9999)) if rv else '6666'
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.%s.132 Safari/537.36' % _rv,
+        'Accept': '*/*',
+        'Accept-Encoding': 'gzip, deflate',
+        'Pragma': 'no-cache',
+        'Cache-control': 'no-cache',
+        'Referer': 'https://www.google.com/'}
+    return headers if not rv else (headers, _rv)

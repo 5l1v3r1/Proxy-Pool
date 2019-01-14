@@ -32,7 +32,7 @@ class ProxyVerifier:
             logger.info('Your IP: ' + self_ip)
         self.ip = self_ip
 
-    def verify_all(self, proxy_url):
+    def gen_tasks(self, proxy_url):
         tasks = []
         if '://' in proxy_url:
             urls = [proxy_url]
@@ -49,10 +49,10 @@ class ProxyVerifier:
         return tasks
 
     async def verify(self, proxy: ProxyModel):
-        response = ''
+        response = None
         try:
             proxy.verified_at = datetime.datetime.now()
-            response = await self.loop.run_in_executor(None, self.request, proxy)
+            response = await self.loop.run_in_executor(None, self.__request, proxy)
             ret = response.json()
         except (
                 requests.Timeout, urllib3.exceptions.TimeoutError, requests.exceptions.ProxyError,
@@ -73,9 +73,13 @@ class ProxyVerifier:
             logger.error('Error with proxy: %s, exception type: %s' % (proxy, type(e)))
             logger.exception(e)
             return proxy
+        self.__parse_response(proxy, ret)
+        return proxy
+
+    def __parse_response(self, proxy, resp):
         proxy.usable = True
-        proxy.ip_feedback = ret['origin']
-        ret_header = ret['headers']
+        proxy.ip_feedback = resp['origin']
+        ret_header = resp['headers']
         extra_headers = {}
         for x in ret_header:
             if x.lower() in ['host']:
@@ -84,21 +88,19 @@ class ProxyVerifier:
                 continue
             extra_headers[x] = ret_header[x]
         if len(extra_headers) == 0:
-            proxy.anonymity = Anonymity.Elite.value
+            proxy.anonymity = int(Anonymity.Elite)
         else:
             proxy.extra_headers = str(extra_headers)
             __forwarded = 'X-Forwarded-For'
             if __forwarded in extra_headers:
                 if self.ip in ret_header[__forwarded]:
-                    proxy.anonymity = Anonymity.Transparent.value
+                    proxy.anonymity = int(Anonymity.Transparent)
                 elif proxy.ip in ret_header[__forwarded]:
-                    proxy.anonymity = Anonymity.Anonymous.value
+                    proxy.anonymity = int(Anonymity.Anonymous)
                 else:
-                    proxy.anonymity = Anonymity.Confuse.value
+                    proxy.anonymity = int(Anonymity.Confuse)
 
-        return proxy
-
-    def request(self, proxy: ProxyModel):
+    def __request(self, proxy: ProxyModel):
         if proxy.protocol.startswith('https'):
             url = 'https://httpbin.skactor.tk/anything'
         else:

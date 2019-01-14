@@ -17,7 +17,7 @@ class ProxyFetcherManager(object):
         raise Exception("Failed to locate Plugin class in " + fetcher)
 
     @staticmethod
-    def fetchers() -> list(IFetcher):
+    def fetchers():
         ret = []
         for fetcher_path in glob(os.path.join(Config.PROJECT_DIR, 'fetcher', 'fetcher_*.py')):
             fetcher_name = os.path.basename(fetcher_path)[:-3]

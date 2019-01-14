@@ -1,9 +1,7 @@
-werkzeug
 Flask
 requests
-lxml
 six
-pymongo
-redis
-kombu
+aiodns
+aiohttp
+async_timeout
 

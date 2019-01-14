@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from utils import LogHandler
 from utils.classes import Singleton, ConfigParse
 
 SECTION_GENERAL = 'GENERAL'
@@ -43,6 +44,7 @@ class Config:
     Base = _base
     engine = _engine
     Session = _session
+    logger = LogHandler('Common')
 
 
 __all__ = ['Config']
