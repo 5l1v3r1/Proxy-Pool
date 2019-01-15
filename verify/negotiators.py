@@ -137,7 +137,7 @@ class HttpsNgtr(BaseNegotiator):
             self._proxy.log('Connect: failed. HTTP status: %s' % code,
                             err=BadStatusError)
             raise BadStatusError
-        await self._proxy.connect(ssl=True)
+        await self._proxy.connect(use_ssl=True)
 
 
 class HttpNgtr(BaseNegotiator):

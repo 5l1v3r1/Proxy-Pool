@@ -32,9 +32,11 @@ class ProxyVerifyAsyncScheduler(Thread):
             try:
                 loop.run_until_complete(task)
             except Exception as e:
-                logger.info(loop)
+                loop.close()
                 loop = None
                 logger.exception(e)
+                continue
+            print(verifier.finished)
             logger.info('Proxy Verify Using %d sec.' % (time.time() - start))
             for proxy in proxies:
                 if proxy.usable:

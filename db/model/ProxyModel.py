@@ -113,13 +113,13 @@ class ProxyModel(Config.Base):
     def ngtr(self):
         return NGTRS[self.protocol.upper()](self)
 
-    async def connect(self, ssl=False):
+    async def connect(self, use_ssl=False):
         err = None
-        msg = '%s' % 'SSL: ' if ssl else ''
+        msg = '%s' % 'SSL: ' if use_ssl else ''
         stime = time.time()
         self.log('%sInitial connection' % msg)
         try:
-            if ssl:
+            if use_ssl:
                 _type = 'ssl'
                 sock = self._writer['conn'].get_extra_info('socket')
                 params = {'ssl': self._ssl_context, 'sock': sock,

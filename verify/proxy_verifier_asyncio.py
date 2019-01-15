@@ -31,6 +31,7 @@ class ProxyAsyncVerifier:
         self.https_judge = Judge('https://httpbin.skactor.tk', loop=loop)
         self.https_judge.event.set()
         self._all_tasks = []
+        self.finished = 0
 
     def _done(self):
         while self._all_tasks:
@@ -40,6 +41,7 @@ class ProxyAsyncVerifier:
 
     async def _push_to_check(self, proxy):
         def _task_done(proxy, f):
+            proxy.close()
             self._on_check.task_done()
             if not self._on_check.empty():
                 self._on_check.get_nowait()
@@ -74,16 +76,16 @@ class ProxyAsyncVerifier:
         except (ProxyConnError, ProxyRecvError, ProxySendError, ProxyEmptyRecvError, BadStatusError, BadResponseError) as e:
             proxy.exception = e
         except JSONDecodeError:
-            Config.logger.error('Json decode error when using %s' % proxy)
+            # Config.logger.error('Json decode error when using %s' % proxy)
             Config.logger.debug(content)
         except Exception as e:
             proxy.exception = e
             Config.logger.error('Error with proxy: %s, exception type: %s' % (proxy, type(e)))
             Config.logger.exception(e)
         finally:
-            proxy.close()
             judge.event.set()
         proxy.verified_at = datetime.datetime.now()
+        self.finished += 1
         return proxy
 
 
