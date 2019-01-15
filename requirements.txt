@@ -1,5 +1,6 @@
 Flask
 requests
+pysocks
 six
 aiohttp
 sqlalchemy
