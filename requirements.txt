@@ -1,7 +1,5 @@
 Flask
 requests
 six
-aiodns
 aiohttp
-async_timeout
-
+sqlalchemy

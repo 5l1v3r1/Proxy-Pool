@@ -9,10 +9,11 @@ import urllib3
 from requests.exceptions import ChunkedEncodingError
 
 from db.model import ProxyModel, Anonymity
-from utils import LogHandler, random_user_agent
+from utils import LogHandler
+from utils.functions import random_user_agent, get_self_ip
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-logger = LogHandler('ProxyVerifier')
+logger = LogHandler('ProxyAsyncVerifier')
 
 
 class ProxyVerifier:
@@ -27,10 +28,7 @@ class ProxyVerifier:
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'close'
         }
-        if not self_ip:
-            self_ip = requests.get('http://httpbin.skactor.tk:8080/ip', timeout=5).json()['origin']
-            logger.info('Your IP: ' + self_ip)
-        self.ip = self_ip
+        self.ip = self_ip or get_self_ip()
 
     def gen_tasks(self, proxy_url):
         tasks = []

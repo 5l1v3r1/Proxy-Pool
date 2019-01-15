@@ -5,7 +5,8 @@ from asyncio import Task
 from threading import Thread
 
 from manager import ProxyFetcherManager, ProxyManager, ProxyVerifier
-from utils import LogHandler, verify_proxy_format
+from utils import LogHandler
+from utils.functions import IPPortPatternLine
 
 logger = LogHandler('ProxyFetcherScheduler')
 
@@ -23,7 +24,7 @@ class ProxyFetcherScheduler(Thread):
             logger.info('Unknown proxy list type:', type(l))
         for i in l:
             proxy = i.strip()
-            if proxy and verify_proxy_format(proxy):
+            if proxy and IPPortPatternLine.match(proxy):
                 # logger.debug('Fetch proxy %s' % proxy)
                 s.add(proxy)
             else:

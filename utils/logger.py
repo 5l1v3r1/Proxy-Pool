@@ -3,8 +3,6 @@ import os
 from logging import Logger, Formatter, StreamHandler
 from logging.handlers import TimedRotatingFileHandler
 
-from utils import Config
-
 # 日志级别
 CRITICAL = 50
 FATAL = CRITICAL
@@ -15,7 +13,7 @@ INFO = 20
 DEBUG = 10
 NOTSET = 0
 
-LOG_PATH = os.path.join(Config.PROJECT_DIR, 'log')
+LOG_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'log')
 
 
 class LogHandler(Logger):

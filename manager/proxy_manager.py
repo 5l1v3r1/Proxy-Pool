@@ -42,9 +42,12 @@ class ProxyManager:
 
     def proxy_verified_before(
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,
-            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0
+            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, limit=0
     ):
-        return self.session.query(ProxyModel).filter(ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)).all()
+        ret = self.session.query(ProxyModel).filter(ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks))
+        if limit:
+            ret = ret.limit(limit)
+        return ret.all()
 
     def proxy_verified_after(
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,

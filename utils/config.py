@@ -7,8 +7,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from utils import LogHandler
 from utils.classes import Singleton, ConfigParse
+from utils.logger import LogHandler
 
 SECTION_GENERAL = 'GENERAL'
 SECTION_DB = 'DB'

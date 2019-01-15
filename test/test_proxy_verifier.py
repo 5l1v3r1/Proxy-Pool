@@ -2,7 +2,7 @@
 import asyncio
 import time
 
-from manager.proxy_verifier import ProxyVerifier
+from verify.proxy_verifier import ProxyVerifier
 
 
 def print_result(tasks):
