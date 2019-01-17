@@ -3,16 +3,11 @@ import re
 from _sha1 import sha1
 from datetime import datetime
 from enum import IntEnum
-from uuid import uuid4
 
 from sqlalchemy import Column, String, SmallInteger, Enum, Integer, DateTime
 
 from connector.base_connector import BaseConnector
 from utils import Config
-
-
-def uid():
-    return str(uuid4())
 
 
 class Anonymity(IntEnum):
@@ -27,7 +22,7 @@ class Anonymity(IntEnum):
 
 class ProxyModel(Config.Base):
     __tablename__ = 'proxy'
-    unique_id = Column(String(40), primary_key=True, default=uid)
+    unique_id = Column(String(40), primary_key=True)
     ip = Column(String(15), nullable=False)
     port = Column(Integer, nullable=False)
     anonymity = Column(SmallInteger, default=1)
@@ -95,6 +90,3 @@ class ProxyModel(Config.Base):
     def log(self, msg, *args, **kwargs):
         Config.logger.debug('%s: %s' % (self.url, msg))
 
-
-if __name__ == '__main__':
-    print(uid())
