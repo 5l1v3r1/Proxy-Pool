@@ -109,8 +109,8 @@ class ProxyManager:
             .where(ProxyModel.usable == 0) \
             .where(ProxyModel.verifiable == 1) \
             .values(verifiable=0)
-        a = self.session.execute(stmt)
-        logger.info('Removed %d useless proxies', a.rowcount)
+        result = self.session.execute(stmt)
+        logger.info('Removed %d useless proxies', result.rowcount)
 
     def commit(self):
         self.session.commit()
