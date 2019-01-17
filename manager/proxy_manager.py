@@ -1,17 +1,18 @@
 # coding:utf-8
 import datetime
 
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, update
 
-from db.model.IPLocation import IPLocation
-from db.model.ProxyModel import ProxyModel
-from utils import Config
+from model import IPLocation
+from model import ProxyModel
+from utils import Config, LogHandler
+
+logger = LogHandler('ProxyManager')
 
 
 class ProxyManager:
     def __init__(self):
         self.session = Config.Session()
-        self.session.close_all()
 
     def get_proxy(self, proxy: ProxyModel) -> ProxyModel:
         return self.session.query(ProxyModel).get(proxy.unique_id)
@@ -21,6 +22,9 @@ class ProxyManager:
 
     def all_proxy(self):
         return self.session.query(ProxyModel).all()
+
+    def all_iploc(self):
+        return self.session.query(IPLocation).all()
 
     def all_usable_proxy(self):
         return self.session.query(ProxyModel).filter(ProxyModel.usable == 1).all()
@@ -42,9 +46,12 @@ class ProxyManager:
 
     def proxy_verified_before(
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,
-            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0, limit=0
+            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0,
+            limit=0
     ):
-        ret = self.session.query(ProxyModel).filter(ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks))
+        ret = self.session.query(ProxyModel) \
+            .filter(ProxyModel.verifiable == 1) \
+            .filter(ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks))
         if limit:
             ret = ret.limit(limit)
         return ret.all()
@@ -53,13 +60,24 @@ class ProxyManager:
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,
             milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0
     ):
-        return self.session.query(ProxyModel).filter(ProxyModel.verified_at > datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)).all()
+        return self.session.query(ProxyModel) \
+            .filter(ProxyModel.verifiable == 1) \
+            .filter(ProxyModel.verified_at > datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)) \
+            .all()
 
     def add_iploc(self, ip):
         ip_loc = self.get_iploc(ip)
         if not ip_loc:
             self.session.add(IPLocation(ip))
         self.commit()
+
+    def add_iploc_no_check(self, ip):
+        self.session.add(IPLocation(ip))
+
+    def add_proxy_no_check(self, proxy: ProxyModel):
+        if proxy.usable:
+            self.add_iploc(proxy.ip)
+            self.session.add(proxy)
 
     def add_proxy(self, proxy: ProxyModel):
         ori_proxy = self.get_proxy(proxy)
@@ -82,9 +100,25 @@ class ProxyManager:
 
     def verify_failed(self, proxy: ProxyModel):
         proxy.failed += 1
+        if proxy.success - proxy.failed > 15:
+            proxy.verifiable = 0
+
+    def remove_bad_proxy(self):
+        stmt = update(ProxyModel) \
+            .where(ProxyModel.failed - ProxyModel.success > 15) \
+            .where(ProxyModel.usable == 0) \
+            .where(ProxyModel.verifiable == 1) \
+            .values(verifiable=0)
+        a = self.session.execute(stmt)
+        logger.info('Removed %d useless proxies', a.rowcount)
 
     def commit(self):
         self.session.commit()
 
     def close(self):
         self.session.close()
+
+
+if __name__ == '__main__':
+    pm = ProxyManager()
+    pm.remove_bad_proxy()
