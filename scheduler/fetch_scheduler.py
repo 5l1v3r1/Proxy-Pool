@@ -1,97 +1,90 @@
 # coding:utf-8
-import asyncio
+import gevent
+from gevent.monkey import patch_all
+
+patch_all()
 import time
-from asyncio import Task
 from threading import Thread
 
-from manager import ProxyFetcherManager, ProxyManager, ProxyVerifier
+from manager import ProxyFetcherManager, ProxyManager
+from model import ProxyModel
 from utils import LogHandler
-from utils.functions import IPPortPatternLine
+from verify.proxy_verifier_gevent import ProxyGeventVerifier
 
+gevent.hub.Hub.NOT_ERROR = (Exception,)
 logger = LogHandler('ProxyFetcherScheduler')
 
 
 class ProxyFetcherScheduler(Thread):
-    def __init__(self, loop=None):
+    def __init__(self):
         super(ProxyFetcherScheduler, self).__init__(name='ProxyFetcherScheduler')
-        self.loop = loop or asyncio.get_event_loop()
 
-    @staticmethod
-    def add_result_set(s: set, l):
-        if isinstance(l, str):
-            l = [l]
-        if not isinstance(l, list):
-            logger.info('Unknown proxy list type:', type(l))
-        for i in l:
-            proxy = i.strip()
-            if proxy and IPPortPatternLine.match(proxy):
-                # logger.debug('Fetch proxy %s' % proxy)
-                s.add(proxy)
-            else:
-                logger.error('Fetch proxy %s error' % proxy)
-
-    async def fetch(self, func):  # convert sync function to async's
-        ret = await self.loop.run_in_executor(None, func)
-        return ret
-
-    def __gen_fetch_tasks(self, result_set: set):
-        tasks = []
+    def __gen_fetch_tasks(self, tasks, result):
         start = time.time()
-        for fetcher in ProxyFetcherManager.fetchers():
-            if not fetcher.enabled:
+        for FetcherClass in ProxyFetcherManager.fetchers():
+            if not FetcherClass.enabled:
                 continue
-            logger.info("Fetch proxy with %s start" % fetcher)
-            if fetcher.async:
-                for i in fetcher.fetch():
-                    if isinstance(i, Task):
-                        tasks.append(i)
-                    else:
-                        self.add_result_set(result_set, i)
-            else:
-                tasks.append(asyncio.ensure_future(self.fetch(fetcher.fetch)))
+            fetcher = FetcherClass(tasks, result)
+            logger.info("Start Fetcher: %s" % fetcher)
+            fetcher.fill_task()
         logger.debug('Using %.2f seconds to start fetchers' % (time.time() - start))
-        return tasks
 
     def __wait_fetch(self, tasks):
         start = time.time()
-        self.loop.run_until_complete(asyncio.wait(tasks))
+        gevent.joinall(tasks)
         logger.debug('Using %.2f second to finish fetch processes' % (time.time() - start))
 
-    def __generate_result(self, tasks, result_set):
-        for task in tasks:
-            for i in task.result():
-                self.add_result_set(result_set, i)
-        logger.info('Fetched %d proxies' % len(result_set))
-
-    def __gen_verify_tasks(self, result_set):
-        logger.info("Start proxy verify")
-        verifier = ProxyVerifier(self.loop)
-        tasks = []
-        for i in result_set:
-            tasks += verifier.gen_tasks(i)
+    def __gen_gevent_tasks(self, proxies):
+        verifier = ProxyGeventVerifier()
+        tasks = verifier.generate_tasks(proxies)
+        logger.info('Created %d verify tasks' % len(proxies))
         return tasks
 
-    def __wait_for_verify(self, tasks):
+    def __wait_for_gevent_tasks(self, tasks):
         start = time.time()
-        self.loop.run_until_complete(asyncio.wait(tasks))
-        logger.info('Proxy Verify Using %d sec.' % (time.time() - start))
+        gevent.joinall(tasks)
+        logger.info('Gevent Proxy Verify Using %d sec.' % (time.time() - start))
 
-    def __write_verify_result(self, tasks):
-        pm = ProxyManager()
-        for i in tasks:
-            result = i.result()
-            pm.add_proxy(result)
+    def __write_verify_result(self, pm, proxies):
+        all_iploc = set()
+        for i in pm.all_iploc():
+            all_iploc.add(i.ip)
+        count_iploc, count_usable = 0, 0
+        for i in proxies:
+            if not i.usable:
+                continue
+            if i.ip not in all_iploc:
+                pm.add_iploc_no_check(i.ip)
+                all_iploc.add(i.ip)
+                count_iploc += 1
+            pm.add_proxy_no_check(i)
+            count_usable += 1
+            pm.commit()
+        logger.info('Added %d new usable proxy' % count_iploc)
+
+    def __remove_exist_proxies(self, pm, proxies):
+        all_proxy = set()
+        for i in pm.all_proxy():
+            all_proxy.add('%s:%d' % (i.ip, i.port))
+        result = []
+        for i in proxies:
+            if i not in all_proxy:
+                result += [ProxyModel.from_url('%s://%s' % (j, i)) for j in ['http', 'https', 'socks5']]
+        logger.info('Remove %d exist proxies' % (len(proxies) - len(result) / 3))
+        return result
 
     def run(self):
-
+        pm = ProxyManager()
         while True:
-            result_set = set()
-            fetch_tasks = self.__gen_fetch_tasks(result_set)
-            self.__wait_fetch(fetch_tasks)
-            self.__generate_result(fetch_tasks, result_set)
-            verify_tasks = self.__gen_verify_tasks(result_set)
-            self.__wait_for_verify(verify_tasks)
-            self.__write_verify_result(verify_tasks)
+            proxies = set()
+            tasks = []
+            self.__gen_fetch_tasks(tasks, proxies)
+            self.__wait_fetch(tasks)
+            logger.info('Fetched %d proxies' % len(proxies))
+            proxies = self.__remove_exist_proxies(pm, proxies)
+            verify_tasks = self.__gen_gevent_tasks(proxies)
+            self.__wait_for_gevent_tasks(verify_tasks)
+            self.__write_verify_result(pm, proxies)
 
             logger.info('ProxyModel Fetch Finished, wait for 10 min')
             time.sleep(60 * 10)
