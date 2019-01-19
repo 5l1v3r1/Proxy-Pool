@@ -6,7 +6,7 @@ from enum import IntEnum
 
 from sqlalchemy import Column, String, SmallInteger, Enum, Integer, DateTime
 
-from connector.base_connector import BaseConnector
+from verify.connector.base_connector import BaseConnector
 from utils import Config
 
 
@@ -89,4 +89,3 @@ class ProxyModel(Config.Base):
 
     def log(self, msg, *args, **kwargs):
         Config.logger.debug('%s: %s' % (self.url, msg))
-

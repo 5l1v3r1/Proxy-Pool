@@ -2,5 +2,6 @@ Flask
 requests
 pysocks
 six
-aiohttp
 sqlalchemy
+gevent
+APScheduler

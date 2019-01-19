@@ -1,43 +1,27 @@
 # coding:utf-8
-import asyncio
 import base64
 import re
 
-from fetcher import IFetcher
-from utils import WebRequest, Config
+import gevent
+
+from fetcher import BaseFetcher
 
 
-class Fetcher(IFetcher):
+class Fetcher(BaseFetcher):
     name = 'proxy-list'
-    source = 'proxy-list.org'
-    async = True
+    use_proxy = True
 
-    async def parse(self, url):
-        loop = asyncio.get_event_loop()
-        req = lambda url: WebRequest.get(url, proxies={'https': 'https://' + Config.proxy})
-        try:
-            r = await loop.run_in_executor(None, req, url)
-        except Exception as e:
-            return []
-        ret = []
-        proxies = re.findall(r"Proxy\('(.*?)'\)", r.text)
-        for proxy in proxies:
-            ret.append(base64.b64decode(proxy).decode())
-        return ret
+    def __init__(self, tasks, result, pool=None):
+        super(Fetcher, self).__init__(tasks, result, pool)
+        self.urls = ['https://proxy-list.org/english/index.php?p=%s' % n for n in range(1, 10)]
 
-    def fetch(self):
-        if not Config.proxy:
-            return
-        urls = ['https://proxy-list.org/english/index.php?p=%s' % n for n in range(1, 10)]
-        tasks = []
-        for url in urls:
-            tasks.append(asyncio.ensure_future(self.parse(url)))
-        return tasks
+    def handle(self, resp):
+        return re.findall(r"Proxy\('(.*?)'\)", resp.text)
+
+    def add_result(self, result):
+        for proxy in result:
+            self._tasks.add(base64.b64decode(proxy).decode())
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    tasks = Fetcher().fetch()
-    loop.run_until_complete(asyncio.wait(tasks))
-    for i in tasks:
-        print(i.result())
+    Fetcher.test()

@@ -19,7 +19,7 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/proxy', methods=['GET', 'POST'])
+@app.route('/api/proxy', methods=['POST'])
 def api_proxy():
     args = request.json or {}
     start = int(args['start'] if 'start' in args else 0)
@@ -35,7 +35,6 @@ def api_proxy():
 
     total = proxy_manager.all_usable_proxy_count()
     ret = {'draw': draw, 'recordsTotal': total, 'recordsFiltered': total, 'data': []}
-    print(args)
     i = start + 1
     for result in result_list:
         proxy = result[0]

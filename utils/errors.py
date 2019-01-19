@@ -1,4 +1,5 @@
 """Errors."""
+from gevent import socket
 
 
 class ProxyError(Exception):
@@ -45,5 +46,13 @@ class BadStatusLine(Exception):
     errmsg = 'bad_status_line'
 
 
-class ErrorOnStream(Exception):
-    errmsg = 'error_on_stream'
+class ConnectTimeout(socket.timeout):
+    pass
+
+
+class RecvTimeout(socket.timeout):
+    pass
+
+
+class HTTPBadHeader(Exception):
+    pass

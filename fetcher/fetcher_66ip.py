@@ -2,20 +2,25 @@
 import re
 
 import execjs
-from requests import Response
+import gevent
 
-from fetcher import IFetcher
-from utils import WebRequest, random_user_agent
+from fetcher import BaseFetcher
 
 
-class Fetcher(IFetcher):
+class Fetcher(BaseFetcher):
     name = '66ip'
-    source = 'www.66ip.cn'
-    cookie = None
-    async = False
-    user_agent = random_user_agent()
 
-    def get_cookie(self, req: Response):
+    def __init__(self, tasks, result, pool=None):
+        self.cookie = None
+        super(Fetcher, self).__init__(tasks, result, pool)
+        self.urls = [
+            'http://www.66ip.cn/areaindex_35/1.html'
+        ]
+
+    def prepare(self):
+        req = self._request('http://www.66ip.cn/')
+        if req.status_code != 521:
+            return
         html = req.text
         # 提取其中的JS加密函数
         js_func = ''.join(re.findall(r'(function .*?)</script>', html))
@@ -32,33 +37,12 @@ class Fetcher(IFetcher):
         cookie = re.findall(r"cookie='(\S+)", cookie_str)[0]
         if 'Set-Cookie' in req.headers:
             cookie += re.findall(r'^\S+', req.headers['Set-Cookie'])[0]
-        self.cookie = cookie
+        # self.logger.info(cookie)
+        self.headers['Cookie'] = cookie
 
-    def fetch(self):
-        urls = [
-            'http://www.66ip.cn/areaindex_35/1.html'
-        ]
-        ret = []
-
-        for url in urls:
-            if self.cookie:
-                req = WebRequest.get(url, header={'User-Agent': self.user_agent, 'Cookie': self.cookie}, retry_time=1)
-            else:
-                req = WebRequest.get(url, header={'User-Agent': self.user_agent}, retry_time=1)
-            html = req.text
-            if req.status_code == 521:
-                self.get_cookie(req)
-                if self.cookie:
-                    html = WebRequest.get(url, retry_time=1, header={'User-Agent': self.user_agent, 'Cookie': self.cookie}).text
-            matches = re.findall(r'(\d+\.\d+\.\d+\.\d+)[\S\s]+?(\d+)</td><td>', html)
-            if not matches:
-                continue
-            for i in matches:
-                ret.append(':'.join(i))
-        ret = list(set(ret))
-        return ret
+    def handle(self, resp):
+        return re.findall(r'(\d+\.\d+\.\d+\.\d+)[\S\s]+?(\d+)</td><td>', resp.text)
 
 
 if __name__ == '__main__':
-    tasks = Fetcher().fetch()
-    print(tasks)
+    Fetcher.test()

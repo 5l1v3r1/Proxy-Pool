@@ -1,6 +1,6 @@
 # coding:utf-8
 import os
-from logging import Logger, Formatter, StreamHandler
+from logging import Logger, Formatter, StreamHandler,FileHandler
 from logging.handlers import TimedRotatingFileHandler
 
 # 日志级别
@@ -34,9 +34,10 @@ class LogHandler(Logger):
         :param level:
         :return:
         """
-        file_name = os.path.join(LOG_PATH, '{name}.log'.format(name=self.name))
+        filename = os.path.join(LOG_PATH, '{name}.log'.format(name=self.name))
         # 设置日志回滚, 保存在log目录, 一天保存一个文件, 保留15天
-        file_handler = TimedRotatingFileHandler(filename=file_name, when='D', interval=1, backupCount=15)
+        file_handler = FileHandler(filename)
+        # file_handler = TimedRotatingFileHandler(filename=file_name, when='D', interval=1, backupCount=15)
         file_handler.suffix = '%Y%m%d.log'
         if not level:
             file_handler.setLevel(self.level)

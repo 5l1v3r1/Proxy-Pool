@@ -1,5 +1,5 @@
-from db.model import ProxyModel
 from manager import ProxyManager
+from model import ProxyModel
 
 if __name__ == '__main__':
     # Config.Base.metadata.drop_all(Config.engine)

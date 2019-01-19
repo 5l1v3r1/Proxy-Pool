@@ -1,110 +1,66 @@
 # coding:utf-8
-import asyncio
 import datetime
 import time
+from _ssl import SSLError
 from json import JSONDecodeError
 
-import requests.adapters
-import urllib3
-from requests.exceptions import ChunkedEncodingError
+import gevent
+from gevent import socket
+from utils._parser import HTTPParseError
 
-from db.model import ProxyModel, Anonymity
+from verify.connector import GeventConnector
+from model import ProxyModel
 from utils import LogHandler
-from utils.functions import random_user_agent, get_self_ip
+from utils.errors import BadStatusError, RecvTimeout, ConnectTimeout, BadResponseError, ProxySendError
+from utils.functions import get_self_ip
+from verify.detector import Detector
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-logger = LogHandler('ProxyAsyncVerifier')
+logger = LogHandler('ProxyGeventVerifier')
 
 
-class ProxyVerifier:
-    header = None
-    ip = None
+class ProxyGeventVerifier:
+    def __init__(self, post=False, timeout=4):
+        ext_ip = get_self_ip()
+        self._method = 'POST' if post else 'GET'
+        self.http_judge = Detector('http://httpbin.skactor.tk:8080/anything', ext_ip)
+        self.https_judge = Detector('https://httpbin.skactor.tk/anything', ext_ip)
+        self._timeout = timeout
 
-    def __init__(self, loop=None, self_ip=None):
-        self.loop = loop or asyncio.get_event_loop()
-        self.header = {
-            'User-Agent': random_user_agent(),
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'close'
-        }
-        self.ip = self_ip or get_self_ip()
-
-    def gen_tasks(self, proxy_url):
+    def generate_tasks(self, proxies):
         tasks = []
-        if '://' in proxy_url:
-            urls = [proxy_url]
-        else:
-            urls = ['%s://%s' % (i, proxy_url) for i in ['http', 'https', 'socks5']]
-        for url in urls:
-            logger.debug('Verifying ' + url)
-            proxy = ProxyModel.instance(url)
-            if not proxy:
-                logger.error(url)
-                continue
-            task = asyncio.ensure_future(self.verify(proxy), loop=self.loop)
+        for proxy in proxies:
+            proxy.init(GeventConnector)
+            task = gevent.spawn(self.check, proxy)
             tasks.append(task)
         return tasks
 
-    async def verify(self, proxy: ProxyModel):
-        response = None
+    def check(self, proxy: ProxyModel):
+        if proxy.protocol == 'https':
+            judge = self.https_judge
+        else:
+            judge = self.http_judge
+        content = None
+        connector = proxy.connector
         try:
-            proxy.verified_at = datetime.datetime.now()
-            response = await self.loop.run_in_executor(None, self.__request, proxy)
-            ret = response.json()
-        except (
-                requests.Timeout, urllib3.exceptions.TimeoutError, requests.exceptions.ProxyError,
-                requests.exceptions.ConnectionError, ConnectionResetError, ChunkedEncodingError
-        ) as e:
+            start = time.time()
+            connector.connect()  # connect to proxy
+            proxy.speed = int((time.time() - start) * 1000)
+            connector.negotiate(judge)  # proxy connect to test web
+            request, request_headers = judge.build_request(self._method, fullpath=connector.use_full_path)  # build test request
+            connector.send(request)  # send request
+            content = connector.recv()  # fetch response
+            judge.parse_response(proxy, content, request_headers)  # parse response body and verify anonymity of proxy
+        except (socket.gaierror, RecvTimeout, ConnectTimeout, ConnectionResetError, IndexError, SSLError, ValueError, HTTPParseError, ConnectionAbortedError, BadResponseError, ProxySendError) as e:
             proxy.exception = e
-            return proxy
+        except BadStatusError as e:
+            proxy.exception = e
         except JSONDecodeError:
             logger.error('Json decode error when using %s' % proxy)
-            logger.debug(response.text)
-            return proxy
-        except TypeError as e:
-            if str(e) == "object of type 'NoneType' has no len()":
-                proxy.auth = True
-            return proxy
+            logger.debug(content)
         except Exception as e:
             proxy.exception = e
-            logger.error('Error with proxy: %s, exception type: %s' % (proxy, type(e)))
+            logger.error('Unexpected exception: %s, exception type: %s' % (proxy, type(e)))
             logger.exception(e)
-            return proxy
-        self.__parse_response(proxy, ret)
+        proxy.verified_at = datetime.datetime.now()
+        logger.debug('%s verified' % proxy)
         return proxy
-
-    def __parse_response(self, proxy, resp):
-        proxy.usable = True
-        proxy.ip_feedback = resp['origin']
-        ret_header = resp['headers']
-        extra_headers = {}
-        for x in ret_header:
-            if x.lower() in ['host']:
-                continue
-            if x in self.header and ret_header[x] == self.header[x]:
-                continue
-            extra_headers[x] = ret_header[x]
-        if len(extra_headers) == 0:
-            proxy.anonymity = int(Anonymity.Elite)
-        else:
-            proxy.extra_headers = str(extra_headers)
-            __forwarded = 'X-Forwarded-For'
-            if __forwarded in extra_headers:
-                if self.ip in ret_header[__forwarded]:
-                    proxy.anonymity = int(Anonymity.Transparent)
-                elif proxy.ip in ret_header[__forwarded]:
-                    proxy.anonymity = int(Anonymity.Anonymous)
-                else:
-                    proxy.anonymity = int(Anonymity.Confuse)
-
-    def __request(self, proxy: ProxyModel):
-        if proxy.protocol.startswith('https'):
-            url = 'https://httpbin.skactor.tk/anything'
-        else:
-            url = 'http://httpbin.skactor.tk:8080/anything'
-        proxies = {'http': str(proxy), 'https': str(proxy)}
-        start = time.time() * 1000
-        ret = requests.get(url, headers=self.header, timeout=5, proxies=proxies, verify=False)
-        proxy.speed = int(time.time() * 1000 - start)
-        return ret

@@ -1,22 +1,21 @@
 # coding:utf-8
-import sys
+from datetime import datetime
 
-sys.path.append('../')
+from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
+from gevent.monkey import patch_all
 
+patch_all()
 from web.app import run as WebService
-from scheduler import ProxyFetcherScheduler, ProxyVerifyScheduler
+from scheduler import ProxyFetcherScheduler, ProxyVerifyGeventScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
 def run():
-    ts = [
-        ProxyFetcherScheduler(),
-        ProxyVerifyScheduler()
-    ]
+    scheduler = BackgroundScheduler()
 
-    for p in ts:
-        print(p.loop)
-        p.setDaemon(True)
-        p.start()
+    scheduler.add_job(ProxyFetcherScheduler().run, 'interval', minutes=10, next_run_time=datetime.now())
+    scheduler.add_job(ProxyVerifyGeventScheduler().run, 'interval', minutes=5, next_run_time=datetime.now())
+    scheduler.start()
     WebService()
 
 

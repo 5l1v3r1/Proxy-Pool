@@ -1,24 +1,19 @@
 # coding:utf-8
-import gevent
-from gevent.monkey import patch_all
-
-patch_all()
+import gc
 import time
-from threading import Thread
+
+import gevent
 
 from manager import ProxyFetcherManager, ProxyManager
 from model import ProxyModel
 from utils import LogHandler
-from verify.proxy_verifier_gevent import ProxyGeventVerifier
+from verify.proxy_verifier import ProxyGeventVerifier
 
 gevent.hub.Hub.NOT_ERROR = (Exception,)
 logger = LogHandler('ProxyFetcherScheduler')
 
 
-class ProxyFetcherScheduler(Thread):
-    def __init__(self):
-        super(ProxyFetcherScheduler, self).__init__(name='ProxyFetcherScheduler')
-
+class ProxyFetcherScheduler:
     def __gen_fetch_tasks(self, tasks, result):
         start = time.time()
         for FetcherClass in ProxyFetcherManager.fetchers():
@@ -45,22 +40,22 @@ class ProxyFetcherScheduler(Thread):
         gevent.joinall(tasks)
         logger.info('Gevent Proxy Verify Using %d sec.' % (time.time() - start))
 
-    def __write_verify_result(self, pm, proxies):
+    @staticmethod
+    def __write_verify_result(pm, proxies):
         all_iploc = set()
         for i in pm.all_iploc():
             all_iploc.add(i.ip)
-        count_iploc, count_usable = 0, 0
+        count_usable = 0
         for i in proxies:
             if not i.usable:
                 continue
             if i.ip not in all_iploc:
                 pm.add_iploc_no_check(i.ip)
                 all_iploc.add(i.ip)
-                count_iploc += 1
             pm.add_proxy_no_check(i)
             count_usable += 1
-            pm.commit()
-        logger.info('Added %d new usable proxy' % count_iploc)
+        pm.commit()
+        logger.info('Added %d new usable proxy' % count_usable)
 
     def __remove_exist_proxies(self, pm, proxies):
         all_proxy = set()
@@ -74,21 +69,26 @@ class ProxyFetcherScheduler(Thread):
         return result
 
     def run(self):
-        pm = ProxyManager()
-        while True:
+        try:
+            pm = ProxyManager()
             proxies = set()
             tasks = []
             self.__gen_fetch_tasks(tasks, proxies)
             self.__wait_fetch(tasks)
             logger.info('Fetched %d proxies' % len(proxies))
             proxies = self.__remove_exist_proxies(pm, proxies)
-            verify_tasks = self.__gen_gevent_tasks(proxies)
-            self.__wait_for_gevent_tasks(verify_tasks)
-            self.__write_verify_result(pm, proxies)
-
+            if proxies:
+                verify_tasks = self.__gen_gevent_tasks(proxies)
+                self.__wait_for_gevent_tasks(verify_tasks)
+                self.__write_verify_result(pm, proxies)
+            pm.close()
+            gc.collect()
             logger.info('ProxyModel Fetch Finished, wait for 10 min')
-            time.sleep(60 * 10)
+        except Exception as e:
+            logger.exception(e)
 
 
 if __name__ == '__main__':
-    ProxyFetcherScheduler().run()
+    while True:
+        ProxyFetcherScheduler().run()
+        time.sleep(60 * 10)

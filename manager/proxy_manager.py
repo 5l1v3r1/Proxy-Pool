@@ -33,7 +33,9 @@ class ProxyManager:
         return self.session.query(ProxyModel).filter(ProxyModel.usable == 1).count()
 
     def all_usable_proxy_with_loc(self, start=0, length=10, column_name='speed', sort_by='asc'):
-        ret = self.session.query(ProxyModel, IPLocation).filter(ProxyModel.usable == 1).filter(IPLocation.ip == ProxyModel.ip)
+        ret = self.session.query(ProxyModel, IPLocation)\
+            .filter(ProxyModel.usable == 1)\
+            .filter(IPLocation.ip == ProxyModel.ip)
 
         if column_name not in ['ip', 'port', 'anonymity', 'protocol', 'speed', 'verified_at', 'updated_at', 'isp_domain']:
             column_name = 'speed'
@@ -75,9 +77,7 @@ class ProxyManager:
         self.session.add(IPLocation(ip))
 
     def add_proxy_no_check(self, proxy: ProxyModel):
-        if proxy.usable:
-            self.add_iploc(proxy.ip)
-            self.session.add(proxy)
+        self.session.add(proxy)
 
     def add_proxy(self, proxy: ProxyModel):
         ori_proxy = self.get_proxy(proxy)

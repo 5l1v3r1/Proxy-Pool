@@ -4,13 +4,13 @@ import inspect
 import os
 from glob import glob
 
-from fetcher import IFetcher
+from fetcher import BaseFetcher
 from utils import Config
 
 
 def _find_fetcher_class(fetcher):
     for (name, klass) in inspect.getmembers(fetcher, inspect.isclass):
-        if issubclass(klass, IFetcher) and klass != IFetcher:
+        if issubclass(klass, BaseFetcher) and klass != BaseFetcher:
             return klass
     raise Exception("Failed to locate Plugin class in " + fetcher)
 

@@ -8,18 +8,20 @@ from utils.functions import IPPortPatternGlobal
 
 
 class Fetcher(BaseFetcher):
-    name = 'goubanjia'
+    name = 'my-proxy'
+    use_proxy = True
 
     def __init__(self, tasks, result, pool=None):
         super(Fetcher, self).__init__(tasks, result, pool)
         self.urls = [
-            'http://www.goubanjia.com/'
+            'https://www.my-proxy.com/free-elite-proxy.html',
+            'https://www.my-proxy.com/free-anonymous-proxy.html',
+            'https://www.my-proxy.com/free-socks-4-proxy.html',
+            'https://www.my-proxy.com/free-socks-5-proxy.html'
         ]
 
     def handle(self, resp):
-        html = re.sub(r"<p style='display:\s*none;'>\S*</p>", '', resp.text)
-        html = re.sub(r'</?(span|div).*?>', '', html)
-        return IPPortPatternGlobal.findall(html)
+        return IPPortPatternGlobal.findall(resp.text)
 
 
 if __name__ == '__main__':
