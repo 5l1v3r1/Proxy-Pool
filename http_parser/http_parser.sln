@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2050
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "http_parser", "http_parser.vcxproj", "{B81B32A5-B7A6-44D4-898F-691FDFF4E313}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Python2.7|all = Python2.7|all
+		Python3.6|all = Python3.6|all
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B81B32A5-B7A6-44D4-898F-691FDFF4E313}.Python2.7|all.ActiveCfg = Python2.7|x64
+		{B81B32A5-B7A6-44D4-898F-691FDFF4E313}.Python2.7|all.Build.0 = Python2.7|x64
+		{B81B32A5-B7A6-44D4-898F-691FDFF4E313}.Python3.6|all.ActiveCfg = Python3.6|x64
+		{B81B32A5-B7A6-44D4-898F-691FDFF4E313}.Python3.6|all.Build.0 = Python3.6|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0811F97F-C769-4D15-B96E-51D36A55D4FC}
+	EndGlobalSection
+EndGlobal
