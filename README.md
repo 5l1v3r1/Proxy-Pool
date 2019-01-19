@@ -8,6 +8,8 @@
 
 http parser自带一个3.6.5的编译好的，如果是别的版本需要自己编译，源码在http_parser目录下
 
+![1.jpg](https://i.loli.net/2019/01/19/5c42c44a085be.jpg)
+
 ## HTTP代理分类
 ### 按匿名功能分类
 是否具有隐藏IP的功能。
