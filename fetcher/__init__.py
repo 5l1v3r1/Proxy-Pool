@@ -20,10 +20,10 @@ class BaseFetcher(ABC):
     def sleep(sec):
         def decorator(func):  # 装饰器核心，以被装饰的函数对象为参数，返回装饰后的函数对象
             if sec:
-                def wrapper(self, *args, **kvargs):  # 装饰的过程，参数列表适应不同参数的函数
+                def wrapper(self, *args, **kwargs):  # 装饰的过程，参数列表适应不同参数的函数
                     self.lock.acquire()
                     try:
-                        func(self, *args, **kvargs)  # 调用函数
+                        func(self, *args, **kwargs)  # 调用函数
                         gevent.sleep(sec)
                     except Exception as e:
                         self.logger.debug(e)
@@ -32,6 +32,7 @@ class BaseFetcher(ABC):
                 return wrapper
             else:
                 return func
+
         return decorator
 
     def __init__(self, tasks, result, pool=None):
@@ -55,6 +56,8 @@ class BaseFetcher(ABC):
         self.add_result(proxies)
 
     def _request(self, url):
+        if not Config.proxy:
+            return Response()
         if self.use_proxy:
             return requests.get(url, headers=self.headers, proxies={'http': 'http://' + Config.proxy, 'https': 'https://' + Config.proxy}, timeout=self.timeout)
         else:
