@@ -5,13 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>免费代理IP库</title>
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
-    {#    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.min.css"/>#}
-    <link rel="stylesheet" type="text/css" href="../static/css/bootstrap.css"/>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/bootstrap.css') }}"/>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/dataTables.bootstrap4.min.css"/>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.5.4/css/buttons.bootstrap4.min.css"/>
-    {#    <link rel="stylesheet" type="text/css" href="https://cdn.bootcss.com/startbootstrap-sb-admin-2/3.3.7+1/css/sb-admin-2.min.css"/>#}
-    {#    <link rel="stylesheet" type="text/css" href="https://adminlte.io/themes/AdminLTE/dist/css/AdminLTE.min.css">#}
+    <link rel="stylesheet" type="text/css" href="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/css/bootstrap.css"/>
+    <link href="https://cdn.bootcss.com/datatables/1.10.19/css/dataTables.bootstrap4.css" rel="stylesheet">
     <style>
         table > thead > tr > th {
             font-size: 14px;
@@ -57,9 +52,6 @@
             </tbody>
         </table>
     </div>
-    <div class="row">
-        <p class="text-danger">&nbsp;&nbsp;&nbsp;&nbsp;代理IP采集于网络，请勿用于非法途径，违者后果自负！</p>
-    </div>
 
     <div class="modal fade" id="modal-speed" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -72,11 +64,11 @@
                     <form>
                         <div class="form-group">
                             <label for="proxy-ip-address" class="control-label">代理地址</label>
-                            <input type="text" class="form-control" id="proxy-ip-address">
+                            <input type="text" class="form-control" id="proxy-url">
                         </div>
                         <div class="form-group">
                             <label for="web-link" class="control-label">访问地址</label>
-                            <input class="form-control" id="web-link" value="https://httpbin.org/ip">
+                            <input class="form-control" id="web-link" value="http://httpbin.skactor.tk:8080/anything">
                         </div>
                         <div class="form-group">
                             <label for="message-text" class="control-label">访问结果</label>
@@ -88,13 +80,10 @@
         </div>
     </div>
 </div>
-<script type="text/javascript" src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
-<script type="text/javascript" src="https://cdn.bootcss.com/twitter-bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script type="text/javascript" src="https://cdn.bootcss.com/datatables/1.10.18/js/jquery.dataTables.min.js"></script>
-<script type="text/javascript" src="https://cdn.bootcss.com/datatables/1.10.18/js/dataTables.bootstrap4.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/dataTables.buttons.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.bootstrap4.min.js"></script>
-<script type="text/javascript" src="https://cdn.datatables.net/buttons/1.5.4/js/buttons.flash.min.js"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/jquery/3.4.1/jquery.js"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/twitter-bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/datatables/1.10.19/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.bootcss.com/datatables/1.10.19/js/dataTables.bootstrap4.js"></script>
 <script type="text/javascript" src="https://cdn.bootcss.com/clipboard.js/1.5.16/clipboard.min.js"></script>
 <script>
     $(function () {
@@ -173,25 +162,14 @@
                 }
             }
         });
-
-
-        $('.btn-speed').click(function () {
-            loadModal = true;
+        $('#data-table').on('click', '.btn-speed', (e) => {
+            let target = e.target;
             $('#modal-speed').modal();
-            var protocol = $(this).attr('data-protocol');
-            var ip = $(this).attr('data-ip');
-            var port = $(this).attr('data-port');
-            var ipAddress = $(this).attr('data-url');
-            var webLink = $('#web-link').val();
-            $('#proxy-ip-address').val(ipAddress);
-            var src = './api/web-request-speed?protocol=' + protocol + '&ip=' + ip + '&port=' + port + '&web_link=' + encodeURIComponent(webLink);
-            $('#proxy-iframe').attr('src', src)
-
+            let proxyUrl = $(target).data('url');
+            let webLink = $('#web-link').val();
+            $('#proxy-url').val(proxyUrl);
+            $('#proxy-iframe').attr('src', '/api/web-request-speed?proxy_url=' + encodeURIComponent(proxyUrl) + '&web_link=' + encodeURIComponent(webLink))
         });
-
-        $('#modal-speed').on('hidden.bs.modal', function (e) {
-            loadModal = false;
-        })
     });
 
 </script>

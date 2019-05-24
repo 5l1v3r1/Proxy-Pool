@@ -2,8 +2,6 @@
 import base64
 import re
 
-import gevent
-
 from fetcher import BaseFetcher
 
 
@@ -11,16 +9,19 @@ class Fetcher(BaseFetcher):
     name = 'proxy-list'
     use_proxy = True
 
-    def __init__(self, tasks, result, pool=None):
-        super(Fetcher, self).__init__(tasks, result, pool)
-        self.urls = ['https://proxy-list.org/english/index.php?p=%s' % n for n in range(1, 10)]
+    def __init__(self, loop=None):
+        super(Fetcher, self).__init__(loop)
+        self.urls = ['https://proxy-list.org/english/index.php?p=%s' % n for n
+                     in range(1, 10)]
 
-    def handle(self, resp):
-        return re.findall(r"Proxy\('(.*?)'\)", resp.text)
+    async def handle(self, resp):
+        return re.findall(r"Proxy\('(.*?)'\)", await resp.text())
 
-    def add_result(self, result):
+    def parse_proxy(self, result):
+        tasks = set()
         for proxy in result:
-            self._tasks.add(base64.b64decode(proxy).decode())
+            tasks.add(base64.b64decode(proxy).decode())
+        return tasks
 
 
 if __name__ == '__main__':

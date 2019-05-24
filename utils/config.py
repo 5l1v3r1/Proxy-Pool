@@ -8,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from utils.classes import Singleton, ConfigParse
-from utils.logger import LogHandler
+from utils.logger import Logger
 
 SECTION_GENERAL = 'GENERAL'
 SECTION_DB = 'DB'
@@ -20,6 +20,7 @@ config_file = ConfigParse()
 config_file.read(cfg_dir)
 config_file = config_file
 section_general = config_file[SECTION_GENERAL]
+section_db = config_file[SECTION_DB]
 section_host = config_file[SECTION_HOST]
 _base = declarative_base()
 _engine = create_engine(section_general['conn'], echo=False)
@@ -28,7 +29,11 @@ _session = sessionmaker(bind=_engine)
 
 @add_metaclass(Singleton)
 class Config:
-    proxy = section_general.get('proxy', None)
+    proxy = section_general['proxy']
+    db_type = section_db['type']
+    db_name = section_db['name']
+    db_host = section_db['host']
+    db_port = section_db['port']
     host_ip = section_host['ip']
     host_port = int(section_host['port'])
     PROJECT_DIR = pj_dir
@@ -39,7 +44,7 @@ class Config:
     Base = _base
     engine = _engine
     Session = _session
-    logger = LogHandler('Common')
+    logger = Logger('Common')
 
 
 __all__ = ['Config']

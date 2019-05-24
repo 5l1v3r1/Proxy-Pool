@@ -1,7 +1,7 @@
 Flask
 requests
-pysocks
 six
+aiohttp
+aiohttp-proxy
 sqlalchemy
-gevent
-APScheduler
+yarl

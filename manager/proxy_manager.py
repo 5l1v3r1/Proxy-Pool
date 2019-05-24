@@ -3,11 +3,11 @@ import datetime
 
 from sqlalchemy import asc, desc, update
 
-from model import IPLocation
-from model import ProxyModel
-from utils import Config, LogHandler
+from model.iplocation import IPLocation
+from model.proxy import ProxyModel
+from utils import Config, Logger
 
-logger = LogHandler('ProxyManager')
+logger = Logger('ProxyManager')
 
 
 class ProxyManager:
@@ -27,17 +27,21 @@ class ProxyManager:
         return self.session.query(IPLocation).all()
 
     def all_usable_proxy(self):
-        return self.session.query(ProxyModel).filter(ProxyModel.usable == 1).all()
+        return self.session.query(ProxyModel).filter(
+            ProxyModel.usable == 1).all()
 
     def all_usable_proxy_count(self):
-        return self.session.query(ProxyModel).filter(ProxyModel.usable == 1).count()
+        return self.session.query(ProxyModel).filter(
+            ProxyModel.usable == 1).count()
 
-    def all_usable_proxy_with_loc(self, start=0, length=10, column_name='speed', sort_by='asc'):
-        ret = self.session.query(ProxyModel, IPLocation)\
-            .filter(ProxyModel.usable == 1)\
+    def all_usable_proxy_with_loc(self, start=0, length=10, column_name='speed',
+                                  sort_by='asc'):
+        ret = self.session.query(ProxyModel, IPLocation) \
+            .filter(ProxyModel.usable == 1) \
             .filter(IPLocation.ip == ProxyModel.ip)
 
-        if column_name not in ['ip', 'port', 'anonymity', 'protocol', 'speed', 'verified_at', 'updated_at', 'isp_domain']:
+        if column_name not in ['ip', 'port', 'anonymity', 'protocol', 'speed',
+                               'verified_at', 'updated_at', 'isp_domain']:
             column_name = 'speed'
         if sort_by == 'asc':
             ret = ret.order_by(asc(column_name))
@@ -48,23 +52,31 @@ class ProxyManager:
 
     def proxy_verified_before(
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,
-            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0,
+            milliseconds: float = 0, minutes: float = 0, hours: float = 0,
+            weeks: float = 0,
             limit=0
     ):
         ret = self.session.query(ProxyModel) \
             .filter(ProxyModel.verifiable == 1) \
-            .filter(ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks))
+            .filter(
+            ProxyModel.verified_at < datetime.datetime.now() - datetime.timedelta(
+                days, seconds, microseconds, milliseconds, minutes, hours,
+                weeks))
         if limit:
             ret = ret.limit(limit)
         return ret.all()
 
     def proxy_verified_after(
             self, days: float = 0, seconds: float = 0, microseconds: float = 0,
-            milliseconds: float = 0, minutes: float = 0, hours: float = 0, weeks: float = 0
+            milliseconds: float = 0, minutes: float = 0, hours: float = 0,
+            weeks: float = 0
     ):
         return self.session.query(ProxyModel) \
             .filter(ProxyModel.verifiable == 1) \
-            .filter(ProxyModel.verified_at > datetime.datetime.now() - datetime.timedelta(days, seconds, microseconds, milliseconds, minutes, hours, weeks)) \
+            .filter(
+            ProxyModel.verified_at > datetime.datetime.now() - datetime.timedelta(
+                days, seconds, microseconds, milliseconds, minutes, hours,
+                weeks)) \
             .all()
 
     def add_iploc(self, ip):
@@ -117,8 +129,3 @@ class ProxyManager:
 
     def close(self):
         self.session.close()
-
-
-if __name__ == '__main__':
-    pm = ProxyManager()
-    pm.remove_bad_proxy()

@@ -1,16 +1,14 @@
 # coding:utf-8
 import re
 
-import gevent
-
 from fetcher import BaseFetcher
 
 
 class Fetcher(BaseFetcher):
     name = 'IPHai'
 
-    def __init__(self, tasks, result, pool=None):
-        super(Fetcher, self).__init__(tasks, result, pool)
+    def __init__(self, loop=None):
+        super(Fetcher, self).__init__(loop)
         self.urls = [
             'http://www.iphai.com/free/ng',
             'http://www.iphai.com/free/wg',
@@ -19,8 +17,10 @@ class Fetcher(BaseFetcher):
             'http://www.iphai.com/'
         ]
 
-    def handle(self, resp):
-        return re.findall(r'<td>\s*(\d+\.\d+\.\d+\.\d+)\s*</td>\s*<td>\s*(\d+)\s*</td>', resp.text)
+    async def handle(self, resp):
+        return re.findall(
+            r'<td>\s*(\d+\.\d+\.\d+\.\d+)\s*</td>\s*<td>\s*(\d+)\s*</td>',
+            await resp.text())
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@
 import sys
 from datetime import datetime
 
+import requests
 from flask import Flask, render_template, json, request
 
 sys.path.append('../')
@@ -19,7 +20,19 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/api/proxy', methods=['POST'])
+@app.route('/api/web-request-speed')
+def web_request_speed():
+    data = request.args
+    try:
+        proxy_url = data.get('proxy_url')
+        web_link = data.get('web_link', 'http://httpbin.skactor.tk:8080/anything')
+        resp = requests.get(web_link, proxies={'http': proxy_url, 'https': proxy_url}).text
+    except Exception as e:
+        return str(e)
+    return resp
+
+
+@app.route('/api/proxy', methods=['GET', 'POST'])
 def api_proxy():
     args = request.json or {}
     start = int(args['start'] if 'start' in args else 0)
@@ -50,8 +63,10 @@ def api_proxy():
             'protocol': proxy.protocol,
             'anonymity': proxy.anonymity,
             'verified': datetime.strftime(proxy.verified_at, '%Y-%m-%d %H:%M:%S'),
-            'ctrl': '<button class="btn btn-sm btn-copy mr-2" data-url="%s" data-unique-id="%s">复制</button><button class="btn btn-sm btn-speed" data-unique-id="%s">测速</button>'
-                    % (proxy.url, proxy.unique_id, proxy.unique_id)
+            'ctrl':
+                '<button class="btn btn-sm btn-copy mr-2" data-url="%s" data-unique-id="%s">复制</button>'
+                '<button class="btn btn-sm btn-speed" data-url="%s" data-unique-id="%s">测速</button>'
+                % (proxy.url, proxy.unique_id, proxy.url, proxy.unique_id)
         })
         i += 1
     return json.jsonify(ret)

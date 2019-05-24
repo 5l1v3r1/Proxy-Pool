@@ -1,5 +1,5 @@
 # coding:utf-8
-from utils import LogHandler
+from utils import Logger
 
 
 def test_log_handler():
@@ -7,7 +7,7 @@ def test_log_handler():
     test function LogHandler  in Util/LogHandler
     :return:
     """
-    log = LogHandler('test')
+    log = Logger('test')
     log.info('this is a log from test')
 
     log.rename(name='test1')
