@@ -41,6 +41,8 @@ class Connector:
                 params = {'host': self.host, 'port': self.port}
             self._reader[_type], self._writer[_type] = await asyncio.wait_for(
                 asyncio.open_connection(**params), timeout=self._timeout)
+        except RuntimeError as e:
+            raise ProxyConnError()
         except asyncio.TimeoutError:
             raise ProxyConnectTimeoutError('Connection: timeout')
         except (ConnectionRefusedError, OSError, ssl.SSLError):
@@ -53,10 +55,10 @@ class Connector:
             return
         self._closed = True
         sock = self._writer['conn'].get_extra_info('socket')
-        if sock:
-            sock.close()
         if self.writer:
             self.writer.close()
+        if sock:
+            sock.close()
         self._reader = {'conn': None, 'ssl': None}
         self._writer = {'conn': None, 'ssl': None}
         self.log('Connection: closed')

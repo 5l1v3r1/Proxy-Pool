@@ -5,23 +5,23 @@ import zlib
 from json import JSONDecodeError
 
 from connector import Connector
+from judge import Judge
 from model import ProxyModel
 from negotiators import NGTRS
 from utils import Logger
 from utils.errors import (
     BadStatusError, BadResponseError, ProxyError)
 from utils.functions import get_status_code, parse_headers
-from judge import Judge
 
 logger = Logger('ProxyAsyncVerifier')
 
 
 class ProxyAsyncVerifier:
-    def __init__(self, loop=None, post=False, timeout=4):
+    def __init__(self, loop=None, post=False):
         self._loop = loop or asyncio.get_event_loop()
         self._method = 'POST' if post else 'GET'
         self.finished = 0
-        self.sem = asyncio.Semaphore(300)
+        self.sem = asyncio.Semaphore(100, loop=self._loop)
         self.https_judge = Judge('https://httpbin.skactor.tk/anything')
         self.http_judge = Judge('http://httpbin.skactor.tk:8080/anything')
 
@@ -33,7 +33,8 @@ class ProxyAsyncVerifier:
     def verify(self, proxies):
         tasks = []
         for proxy in proxies:
-            tasks.append(asyncio.ensure_future(self._push_to_check(proxy)))
+            tasks.append(asyncio.ensure_future(
+                self._push_to_check(proxy), loop=self._loop))
         return tasks
 
     async def check(self, proxy: ProxyModel):

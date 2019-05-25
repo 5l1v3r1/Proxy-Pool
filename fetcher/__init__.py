@@ -45,7 +45,7 @@ class BaseFetcher(ABC):
             'Connection': 'close'
         }
         self.loop = loop or asyncio.get_event_loop()
-        self.lock = asyncio.Lock()
+        self.lock = asyncio.Lock(loop=self.loop)
 
     async def fetch(self, url):
         try:
@@ -106,7 +106,7 @@ class BaseFetcher(ABC):
         urls = self.process_urls()
         tasks = []
         for url in urls:
-            task = asyncio.ensure_future(self.fetch(url))
+            task = asyncio.ensure_future(self.fetch(url),loop=self.loop)
             tasks.append(task)
         return tasks
 

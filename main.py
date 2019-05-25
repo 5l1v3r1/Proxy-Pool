@@ -1,24 +1,23 @@
 # coding:utf-8
-from scheduler.fetch_scheduler import ProxyFetcherScheduler
-from scheduler.verify_scheduler import ProxyVerifyAsyncScheduler
+import asyncio
 from datetime import datetime
 
-from web.app import run as WebService
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+from scheduler.fetch_scheduler import fetch_proxy
+from scheduler.verify_scheduler import verify_proxy
 
 
 def run():
+    loop = asyncio.get_event_loop()
     scheduler = AsyncIOScheduler()
-    fetcher = ProxyFetcherScheduler()
-    verifier = ProxyVerifyAsyncScheduler()
 
-    scheduler.add_job(fetcher.run, 'interval', minutes=10,
+    scheduler.add_job(fetch_proxy, 'interval', minutes=10,
                       next_run_time=datetime.now())
-    scheduler.add_job(verifier.run, 'interval', minutes=5,
+    scheduler.add_job(verify_proxy, 'interval', minutes=5,
                       next_run_time=datetime.now())
     scheduler.start()
-    WebService()
-
+    loop.run_forever()
 
 if __name__ == '__main__':
     run()
