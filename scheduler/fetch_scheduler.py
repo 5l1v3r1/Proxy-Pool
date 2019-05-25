@@ -31,15 +31,14 @@ def __gen_fetch_tasks(loop):
     return tasks
 
 
-def __get_result(tasks):
+def __get_result(task_results):
     result = set()
-    for task in tasks:
-        _task_result = task.result()
-        if isinstance(_task_result, str):
-            _task_result = [_task_result]
-        if not isinstance(_task_result, list):
-            logger.info('Unknown proxy list type:', type(_task_result))
-        for i in _task_result:
+    for task_result in task_results:
+        if isinstance(task_result, str):
+            task_result = [task_result]
+        if not isinstance(task_result, list):
+            logger.info('Unknown proxy list type:', type(task_result))
+        for i in task_result:
             proxy = i.strip()
             if proxy and IPPortPatternLine.match(proxy):
                 # logger.debug('Fetch proxy %s' % proxy)
@@ -84,11 +83,10 @@ async def fetch_proxy(loop=None):
     loop = loop or asyncio.get_event_loop()
     fetch_tasks = __gen_fetch_tasks(loop)
     start = time.time()
-    await asyncio.gather(*fetch_tasks)
+    task_results = await asyncio.gather(*fetch_tasks)
     logger.debug('Using %.2f second to finish fetch processes' % (
             time.time() - start))
-    proxies = __get_result(fetch_tasks)
-
+    proxies = __get_result(task_results)
     logger.info('Fetched %d proxies' % len(proxies))
 
     pm = ProxyManager()

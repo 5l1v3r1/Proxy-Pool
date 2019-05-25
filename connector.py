@@ -42,6 +42,7 @@ class Connector:
             self._reader[_type], self._writer[_type] = await asyncio.wait_for(
                 asyncio.open_connection(**params), timeout=self._timeout)
         except RuntimeError as e:
+            print(str(e))
             raise ProxyConnError()
         except asyncio.TimeoutError:
             raise ProxyConnectTimeoutError('Connection: timeout')

@@ -48,15 +48,17 @@ class BaseFetcher(ABC):
         self.lock = asyncio.Lock(loop=self.loop)
 
     async def fetch(self, url):
+        result = []
         try:
             resp = await self._request(url)
             proxies = await self.handle(resp)
             result = list(self.parse_proxy(proxies))
         except (asyncio.TimeoutError, ClientConnectionError):
-            return []
+            pass
         except Exception as e:
             self.logger.exception('Failed to fetch: ' + url)
-            return []
+        finally:
+            self.logger.info('%s fetched [%d] urls' % (url, len(result)))
         return result
 
     async def _request(self, url):
@@ -89,7 +91,8 @@ class BaseFetcher(ABC):
         elif isinstance(result, tuple):
             _result.add(':'.join(result))
         elif result is None:
-            self.logger.warning(self.name + ' Return None')
+            pass
+            # self.logger.warning(self.name + ' Return None')
         else:
             raise TypeError('Unknown proxy type: ' + str(type(result)))
         return _result
@@ -106,7 +109,7 @@ class BaseFetcher(ABC):
         urls = self.process_urls()
         tasks = []
         for url in urls:
-            task = asyncio.ensure_future(self.fetch(url),loop=self.loop)
+            task = asyncio.ensure_future(self.fetch(url), loop=self.loop)
             tasks.append(task)
         return tasks
 
